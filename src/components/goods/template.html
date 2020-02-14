@@ -1,0 +1,47 @@
+<div class="goods">
+  <!-- 添加分类 按钮 -->
+  <el-button type="success" plain @click="$router.push('/goods-add')">添加分类</el-button>
+
+  <!-- 表格 -->
+  <el-table
+    :data="goodsList"
+    style="width: 100%">
+    <el-table-column
+      type="index"
+      :index="indexMethod">
+    </el-table-column>
+    <el-table-column
+      prop="goods_name"
+      label="商品名称"
+      width="180">
+    </el-table-column>
+    <el-table-column
+      prop="goods_price"
+      label="商品价格"
+      width="180">
+    </el-table-column>
+    <el-table-column
+      prop="goods_weight"
+      label="商品重量">
+    </el-table-column>
+    <el-table-column
+      prop="add_time"
+      label="创建时间">
+    </el-table-column>
+    <el-table-column>
+      <template slot-scope="scope">
+        <el-button type="primary" icon="el-icon-edit" plain size="mini"></el-button>
+        <el-button type="danger" icon="el-icon-delete" plain size="mini"></el-button>
+      </template>
+    </el-table-column>
+  </el-table>
+  <!-- 分页 -->
+  <el-pagination
+    background
+    layout="prev, pager, next"
+    :page-size="5"
+    :current-page="curPage"
+    @current-change="changePage"
+    :total="total">
+  </el-pagination>
+</div>

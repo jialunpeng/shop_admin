@@ -1,0 +1,183 @@
+<div class="user-list">
+  <!-- 面包屑导航 -->
+  <el-breadcrumb class="breadcrumb" separator-class="el-icon-arrow-right">
+    <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+    <el-breadcrumb-item>用户管理</el-breadcrumb-item>
+    <el-breadcrumb-item>用户列表</el-breadcrumb-item>
+  </el-breadcrumb>
+
+  <!-- 搜索 -->
+  <el-row :gutter="20">
+    <el-col :span="6">
+      <el-input v-model="searchText" placeholder="请输入内容" class="input-with-select">
+        <el-button slot="append" icon="el-icon-search" @click="search"></el-button>
+      </el-input>
+    </el-col>
+    <el-col :span="2">
+      <el-button type="success" plain @click="showUserAddDialog">添加用户</el-button>
+    </el-col>
+  </el-row>
+
+  <!--
+    表格
+
+    el-table-column 表示表格中的每一行
+      label 当前列的名称
+      prop 展示数据中哪个属性的值
+  -->
+  <el-table
+    :data="userList"
+    stripe
+    style="width: 100%">
+    <el-table-column
+      prop="username"
+      label="姓名"
+      width="180">
+    </el-table-column>
+    <el-table-column
+      prop="email"
+      label="邮箱"
+      width="180">
+    </el-table-column>
+    <el-table-column
+      prop="mobile"
+      label="电话">
+    </el-table-column>
+
+    <!-- 状态 -->
+    <el-table-column
+      prop="mg_state"
+      label="用户状态">
+      <!--
+        注意：如果需要在列中自定义列模板，需要使用 template 组件
+
+        通过 scope 属性，可以获取到当前的数据
+        scope.row 就是：用户列表项中的每一条数据（对象）
+        scope.row.mg_state 就是：当前的 ms_state 属性的值
+      -->
+      <template slot-scope="user">
+        <el-switch
+          v-model="user.row.mg_state"
+          active-color="#409EFF"
+          inactive-color="#DCDFE6"
+          @change="changeUserState(user.row)">
+        </el-switch>
+      </template>
+    </el-table-column>
+
+    <!-- 操作 -->
+    <el-table-column
+      prop="address"
+      label="操作">
+      <template slot-scope="scope">
+        <el-button type="primary" plain size="mini" icon="el-icon-edit" @click="showUserEditDialog(scope.row)"></el-button>
+        <el-button type="danger" plain size="mini" icon="el-icon-delete" @click="delUser(scope.row.id)"></el-button>
+        <el-button type="success" plain size="mini" icon="el-icon-check" @click="showUserAssignDialog(scope.row)">分配角色</el-button>
+      </template>
+    </el-table-column>
+  </el-table>
+
+  <!--
+    分页组件：
+    total 表示：总条数
+    page-size 表示：每页条数
+    current-change 事件表示：切换页码的时候，会触发的事件，并且会将 当前页 作为方法的参数
+
+    sync 单词的意思：同步
+    .sync 修饰符做了什么事：子组件修改了父组件的数据，实际上是：子组件修改数据后，自动让父组件中的数据更新
+
+    1 current-page 属性表示：给组件 el-pagination 传递的属性
+    2 curPage 数据是由：父组件提供的
+
+    添加 .sync 修饰符以后，点击该组件的按钮触发事件后，会自动修改父组件中的 curPage 数据
+    不添加 .sync 修饰符，点击该组件的按钮触发事件后，不会自动修改父组件中的 curPage 数据
+
+    props 是只读的，子组件只能读取props的值，不能修改props的值
+  -->
+  <el-pagination
+    background
+    layout="prev, pager, next"
+    @current-change="getCurPageUserList"
+    :current-page.sync="curPage"
+    :page-size="pageSize"
+    :page-count="totalPage"
+    :total="total">
+  </el-pagination>
+
+  <!-- 添加用户对话框 -->
+  <el-dialog title="添加用户" :visible.sync="userAddDialog">
+    <!--
+      如果要设置label的位置，需要给 el-form 添加 label-width 属性
+
+      如果要使用 表单验证 或者 重置表单 功能的时候，需要给每个 el-form-item 提供 prop 属性。 prop 的值是 userAddForm 中属性的名称 mobile，不是： userAddForm.mobile
+     -->
+    <el-form ref="userAddForm" :rules="userAddRules" :model="userAddForm" label-width="120px" label-position="right">
+      <el-form-item label="用户名" prop="username">
+        <el-input v-model="userAddForm.username" auto-complete="off"></el-input>
+      </el-form-item>
+      <el-form-item label="密码" prop="password">
+        <el-input v-model="userAddForm.password" auto-complete="off"></el-input>
+      </el-form-item>
+      <el-form-item label="邮箱" prop="email">
+        <el-input v-model="userAddForm.email" auto-complete="off"></el-input>
+      </el-form-item>
+      <el-form-item label="手机" prop="mobile">
+        <el-input v-model="userAddForm.mobile" auto-complete="off"></el-input>
+      </el-form-item>
+    </el-form>
+    <div slot="footer" class="dialog-footer">
+      <el-button @click="userAddDialog = false">取 消</el-button>
+      <el-button type="primary" @click="addUser">确 定</el-button>
+    </div>
+  </el-dialog>
+
+  <!-- 编辑用户对话框 -->
+  <el-dialog title="编辑用户" :visible.sync="userEditDialog">
+    <el-form ref="userEditForm" :rules="userEditRules" :model="userEditForm" label-width="120px" label-position="right">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="userEditForm.username" auto-complete="off" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="userEditForm.email" auto-complete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="手机" prop="mobile">
+          <el-input v-model="userEditForm.mobile" auto-complete="off"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="userEditForm = false">取 消</el-button>
+        <el-button type="primary" @click="editUser">确 定</el-button>
+      </div>
+    </el-dialog>
+
+  <!-- 分配角色对话框 -->
+  <el-dialog title="分配角色" :visible.sync="userAssignDialog">
+    <el-form ref="userAssignForm" :model="userAssignForm" label-width="120px" label-position="right">
+      <el-form-item label="用户名" prop="username">
+        <el-input v-model="userAssignForm.username" auto-complete="off" disabled></el-input>
+      </el-form-item>
+      <el-form-item label="角色列表" prop="email">
+        <!--
+          下拉选择框
+
+          label 表示：使用数据中的哪个属性来表示展示的文字内容
+          value 表示：表示每一项的值，一般就是id
+          v-model 表示：选中 option 的value值，也是id值
+            只要 v-model 与 el-option 的value属性值相同，那么这一项就会默认选中
+        -->
+        <el-select v-model="userAssignForm.roleId" placeholder="请选择">
+          <el-option
+            v-for="item in rolesList"
+            :key="item.id"
+            :label="item.roleName"
+            :value="item.id">
+          </el-option>
+        </el-select>
+      </el-form-item>
+    </el-form>
+    <div slot="footer" class="dialog-footer">
+      <el-button @click="userAssignDialog = false">取 消</el-button>
+      <el-button type="primary" @click="assignRole2User">确 定</el-button>
+    </div>
+  </el-dialog>
+</div>

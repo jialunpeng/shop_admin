@@ -1,0 +1,107 @@
+<div class="categories">
+  <!-- 添加分类按钮 -->
+  <el-row>
+    <el-col>
+      <el-button type="success" plain @click="showCateAddDialog">添加分类</el-button>
+    </el-col>
+  </el-row>
+  <!--
+    分类列表数据
+
+    v-loading="loading"
+      是一个自定义指令，只要添加该指令，那么，表格就会有一个 加载中 的提示效果
+      loading 是 data 中的一个数据
+        如果 loading = true，表示加载中（ 会有加载提示 ）
+        如果 loading = false，表示数据加载完成 （ 不再有加载提示 ）
+  -->
+  <el-table
+    v-loading="loading"
+    :data="cateList"
+    stripe
+    style="width: 100%">
+
+    <!-- 可展开的表格组件，配合 el-table 来使用 -->
+    <el-table-tree-column
+      fixed
+      prop="cat_name"
+      label="分类名称"
+      tree-key="cat_id"
+      level-key="cat_level"
+      parent-key="cat_pid"
+      child-key="children"
+      width="280"
+      :indent-size="30">
+      <template slot-scope="scope">
+        <span>{{ scope.row.cat_name }}</span>
+      </template>
+    </el-table-tree-column>
+
+    <!-- <el-table-column
+      prop="cat_name"
+      label="分类名称"
+      width="280">
+    </el-table-column> -->
+    <el-table-column
+      prop="cat_deleted"
+      label="是否有效"
+      width="180">
+      <template slot-scope="scope">
+        <!-- 布尔值转化为字符串，就可以展示出来了 -->
+        {{ scope.row.cat_deleted + '' }}
+      </template>
+    </el-table-column>
+    <el-table-column
+      prop="cat_level"
+      label="菜单级别"
+      width="180">
+    </el-table-column>
+    <el-table-column label="操作">
+      <template slot-scope="scope">
+        <el-button type="primary" icon="el-icon-edit" plain size="mini"></el-button>
+        <el-button type="danger" icon="el-icon-delete" plain size="mini"></el-button>
+      </template>
+    </el-table-column>
+  </el-table>
+
+  <!-- 分页组件 -->
+  <el-pagination
+    background
+    layout="prev, pager, next"
+    @current-change="changePage"
+    :page-size="10"
+    :total="total">
+  </el-pagination>
+
+  <!-- 添加分类对话框 -->
+  <el-dialog title="添加分类" :visible.sync="cateAddDialog">
+    <el-form ref="cateAddForm" :model="cateAddForm" label-width="120px" label-position="right">
+      <el-form-item label="分类名称" prop="cat_name">
+        <el-input v-model="cateAddForm.cat_name"></el-input>
+      </el-form-item>
+
+      <el-form-item label="父级名称" prop="cat_pid">
+        <!--
+          级联选择器：
+
+            options：表示当前的数据源
+            :props 表示修改默认的 label 和 value
+              label 表示：展示出来的每一项的文字内容（给用户看的）
+              value 表示：当前选中项的id值（给程序使用的）
+         -->
+        <el-cascader
+          v-model="cateAddForm.cat_pid"
+          :options="cateAddList"
+          :props="{
+            label: 'cat_name',
+            value: 'cat_id'
+          }"
+          change-on-select
+        ></el-cascader>
+      </el-form-item>
+    </el-form>
+    <div slot="footer" class="dialog-footer">
+      <el-button @click="cateAddDialog = false">取 消</el-button>
+      <el-button type="primary" @click="addCate">确 定</el-button>
+    </div>
+  </el-dialog>
+</div>
